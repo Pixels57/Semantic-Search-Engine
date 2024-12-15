@@ -1,6 +1,8 @@
 from typing import Dict, List, Annotated
 import numpy as np
 import os
+import random
+from node import Node
 
 DB_SEED_NUMBER = 42
 ELEMENT_SIZE = np.dtype(np.float32).itemsize
@@ -75,9 +77,14 @@ class VecDB:
         norm_vec2 = np.linalg.norm(vec2)
         cosine_similarity = dot_product / (norm_vec1 * norm_vec2)
         return cosine_similarity
+    
+
+    #############################################################################
+
 
     def _build_index(self):
         # Placeholder for index building logic
-        pass
+        root = Node(None, self.get_all_rows())
+
 
 
