@@ -9,7 +9,7 @@ ELEMENT_SIZE = np.dtype(np.float32).itemsize
 DIMENSION = 70
 
 class VecDB:
-    def __init__(self, database_file_path = "saved_db.dat", index_file_path = "index.dat", new_db = True, db_size = None) -> None:
+    def __init__(self, database_file_path = "saved_db.csv", index_file_path = "index.csv", new_db = True, db_size = None) -> None:
         self.db_path = database_file_path
         self.index_path = index_file_path
         if new_db:
@@ -83,7 +83,7 @@ class VecDB:
     def _build_index(self):
         # Placeholder for index building logic
         root = Node(None, self.get_all_rows())
-        root._build_tree(100, 90)
+        root._build_tree(100, 0.7)
 
 
 
