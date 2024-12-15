@@ -78,12 +78,12 @@ class Node(object):
         return False
         
     #Recurses on left and right halves to build a tree.
-    def build_tree(node, K: int, imb: float):
-        if split_node(node, K, imb):
-            if node._left:
-                build_tree(node.left, K=K, imb=imb)
-            if node._right:
-                build_tree(node.right, K=K, imb=imb)
+    def _build_tree(node, K: int, imb: float):
+        node.split_node(K=K, imb=imb)
+        if node.left:
+            node._build_tree(node.left, K=K, imb=imb)
+        if node.right:
+            node._build_tree(node.right, K=K, imb=imb)
     
     def __str__(self):
         return str(self.data)
