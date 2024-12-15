@@ -80,11 +80,10 @@ class VecDB:
     
 
     #############################################################################
-
-
     def _build_index(self):
         # Placeholder for index building logic
         root = Node(None, self.get_all_rows())
+        root._build_tree(100, 90)
 
 
 
