@@ -3,6 +3,13 @@ import numpy as np
 import os
 import random
 from node import Node
+from node import _select_nearby
+from node import _build_tree
+from node import build_forest
+from node import _query_linear
+from node import _query_tree
+from node import query_forest
+import pickle
 
 DB_SEED_NUMBER = 42
 ELEMENT_SIZE = np.dtype(np.float32).itemsize
@@ -19,6 +26,7 @@ class VecDB:
             if os.path.exists(self.db_path):
                 os.remove(self.db_path)
             self.generate_database(db_size)
+        self.forest = self.load_index()
     
     def generate_database(self, size: int) -> None:
         rng = np.random.default_rng(DB_SEED_NUMBER)
@@ -60,16 +68,12 @@ class VecDB:
         return np.array(vectors)
     
     def retrieve(self, query: Annotated[np.ndarray, (1, DIMENSION)], top_k = 5):
-        scores = []
-        num_records = self._get_num_records()
-        # here we assume that the row number is the ID of each vector
-        for row_num in range(num_records):
-            vector = self.get_one_row(row_num)
-            score = self._cal_score(query, vector)
-            scores.append((score, row_num))
-        # here we assume that if two rows have the same score, return the lowest ID
-        scores = sorted(scores, reverse=True)[:top_k]
-        return [s[1] for s in scores]
+        if self.forest is None:
+            raise ValueError("Index is not loaded. Please load the index.")
+        
+        # Use the pre-loaded index (forest) to retrieve nearest neighbors
+        nearest_neighbors = query_forest(self.forest, query, top_k)
+        return nearest_neighbors
     
     def _cal_score(self, vec1, vec2):
         dot_product = np.dot(vec1, vec2)
@@ -81,9 +85,27 @@ class VecDB:
 
     #############################################################################
     def _build_index(self):
-        # Placeholder for index building logic
-        root = Node(None, self.get_all_rows())
-        root._build_tree(100, 90)
+        # Build the index starting from the root node
+        self.root = Node(None, self.get_all_rows())
+        _build_tree(self.root, K=100, imb=0.95)
 
+        # Create a forest of trees
+        self.forest = build_forest(self.get_all_rows(), N=32, K=100, imb=0.95)
+
+        # Save the index to a file
+        with open(self.index_path, "wb") as f:
+            pickle.dump(self.forest, f)
+        print(f"Index saved to {self.index_path}")
+
+    def load_index(self):
+        # Load the index from the file
+        if os.path.exists(self.index_path):
+            with open(self.index_path, 'rb') as f:
+                forest = pickle.load(f)
+            print(f"Index loaded from {self.index_path}")
+            return forest
+        else:
+            print("Index not found. Please build the index first.")
+            return None
 
 
