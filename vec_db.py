@@ -87,10 +87,10 @@ class VecDB:
     def _build_index(self):
         # Build the index starting from the root node
         self.root = Node(None, self.get_all_rows())
-        _build_tree(self.root, K=100, imb=0.95)
+        # _build_tree(self.root, K=100, imb=0.95)
 
         # Create a forest of trees
-        self.forest = build_forest(self.get_all_rows(), N=32, K=100, imb=0.95)
+        self.forest = build_forest(self.get_all_rows(), N=1, K=200, imb=0.95)
 
         # Save the index to a file
         with open(self.index_path, "wb") as f:

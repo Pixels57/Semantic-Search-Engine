@@ -1,7 +1,7 @@
 import numpy as np
 from vec_db import VecDB
 
-db = VecDB(db_size = 10**4)
-query_vector = np.random.rand(1,70) # Query vector of dimension 70
-similar_images = db.retrieve(query_vector, top_k=5)
-print(similar_images)
+db = VecDB(db_size = 10**7)
+# query_vector = np.random.rand(1,70) # Query vector of dimension 70
+# similar_images = db.retrieve(query_vector, top_k=5)
+# print(similar_images)
