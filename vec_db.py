@@ -3,6 +3,8 @@ import numpy as np
 import os
 import random
 from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
+import csv
 
 DB_SEED_NUMBER = 42
 ELEMENT_SIZE = np.dtype(np.float32).itemsize
@@ -127,13 +129,24 @@ class VecDB:
 
     def _save_index(self):
         # Save centroids to a file
-        np.savetxt(self.index_path, self.centroids, delimiter=",")
+        # np.savetxt(self.index_path, self.centroids, delimiter=",")
 
-        # Save inverted lists to a separate file
-        inverted_file_path = self.index_path.replace(".csv", "_inverted_lists.txt")
-        with open(inverted_file_path, "w") as f:
+        # # Save inverted lists to a separate file
+        # inverted_file_path = self.index_path.replace(".csv", "_inverted_lists.csv")
+        # with open(inverted_file_path, "w") as f:
+        #     for cluster_idx, vector_ids in self.inverted_lists.items():
+        #         f.write(f"{cluster_idx}:{','.join(map(str, vector_ids))}\n")
+        np.savetxt(self.index_path, self.centroids, delimiter=",")
+    
+        # Save inverted lists to a separate CSV file
+        inverted_file_path = self.index_path.replace(".csv", "_inverted_lists.csv")
+        with open(inverted_file_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            # Write header for clarity
+            writer.writerow(["Cluster Index", "Vector IDs"])
+            # Write each cluster and its vector IDs
             for cluster_idx, vector_ids in self.inverted_lists.items():
-                f.write(f"{cluster_idx}:{','.join(map(str, vector_ids))}\n")
+                writer.writerow([cluster_idx, ",".join(map(str, vector_ids))])
 
     def _build_index(self):
         # Placeholder for index building logic
@@ -167,11 +180,13 @@ class VecDB:
         
         data = self.get_all_rows()
 
-        kmeans = KMeans(n_clusters=self.nlist, random_state=DB_SEED_NUMBER)
-        kmeans.fit(data)
-        self.centroids = kmeans.cluster_centers_
+        # kmeans = KMeans(n_clusters=self.nlist, random_state=DB_SEED_NUMBER)
+        # kmeans.fit(data)
+        minibatch_kmeans = MiniBatchKMeans(n_clusters=self.nlist, random_state=DB_SEED_NUMBER, batch_size=1000)
+        minibatch_kmeans.fit(data)
+        self.centroids = minibatch_kmeans.cluster_centers_
 
-        cluster_assignments = kmeans.labels_
+        cluster_assignments = minibatch_kmeans.labels_
         self.inverted_lists = {i: [] for i in range(self.nlist)}
 
         for idx, cluster_idx in enumerate(cluster_assignments):
