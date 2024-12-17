@@ -17,17 +17,26 @@ class VecDB:
         Loads the centroids and inverted lists from disk.
         """
         if os.path.exists(self.index_path):
-            # Load centroids
-            self.centroids = np.loadtxt(self.index_path, delimiter=",")
+            with open(self.index_path, 'r') as f:
+                reader = csv.reader(f)
+                
+                # Read Centroids section
+                centroids = []
+                while True:
+                    line = next(reader)
+                    if line == []:  # Blank line separating sections
+                        break
+                    centroids.append(np.array(line, dtype=np.float32))
+                self.centroids = np.array(centroids)
 
-            # Load inverted lists
-            inverted_file_path = self.index_path.replace(".csv", "_inverted_lists.txt")
-            if os.path.exists(inverted_file_path):
-                self.inverted_lists = {}
-                with open(inverted_file_path, "r") as f:
-                    for line in f:
-                        cluster_idx, vector_ids = line.strip().split(":")
-                        self.inverted_lists[int(cluster_idx)] = list(map(int, vector_ids.split(",")))
+                # Read Inverted Lists section
+                inverted_lists = {}
+                for line in reader:
+                    if line:  # Skip empty lines if any
+                        cluster_idx = int(line[0])
+                        vector_ids = list(map(int, line[1:]))
+                        inverted_lists[cluster_idx] = vector_ids
+                self.inverted_lists = inverted_lists
         else:
             raise FileNotFoundError(f"No index file found at {self.index_path}")
 
@@ -136,17 +145,19 @@ class VecDB:
         # with open(inverted_file_path, "w") as f:
         #     for cluster_idx, vector_ids in self.inverted_lists.items():
         #         f.write(f"{cluster_idx}:{','.join(map(str, vector_ids))}\n")
-        np.savetxt(self.index_path, self.centroids, delimiter=",")
-    
-        # Save inverted lists to a separate CSV file
-        inverted_file_path = self.index_path.replace(".csv", "_inverted_lists.csv")
-        with open(inverted_file_path, "w", newline="") as f:
+        with open(self.index_path, 'w', newline='') as f:
             writer = csv.writer(f)
-            # Write header for clarity
-            writer.writerow(["Cluster Index", "Vector IDs"])
-            # Write each cluster and its vector IDs
+            
+            # Write the centroids
+            for centroid in self.centroids:
+                writer.writerow(centroid)
+            
+            # Write a blank line between centroids and inverted lists (optional)
+            writer.writerow([])  # Blank line to separate sections (you can skip this if not needed)
+            
+            # Write the inverted lists
             for cluster_idx, vector_ids in self.inverted_lists.items():
-                writer.writerow([cluster_idx, ",".join(map(str, vector_ids))])
+                writer.writerow([cluster_idx] + vector_ids)
 
     def _build_index(self):
         # Placeholder for index building logic
